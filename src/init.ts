@@ -5,7 +5,6 @@ import {
   viewport,
   init as initSDK,
   mockTelegramEnv,
-  type ThemeParams,
   retrieveLaunchParams,
   emitEvent,
   miniApp,
@@ -35,18 +34,22 @@ export async function init(options: {
   // event for the "web_app_request_safe_area" method.
   if (options.mockForMacOS) {
     let firstThemeSent = false;
-    mockTelegramEnv({
-      onEvent(event, next) {
-        if (event.name === 'web_app_request_theme') {
-          let tp: ThemeParams = {};
-          if (firstThemeSent) {
-            tp = themeParams.state();
-          } else {
-            firstThemeSent = true;
-            tp ||= retrieveLaunchParams().tgWebAppThemeParams;
-          }
-          return emitEvent('theme_changed', { theme_params: tp });
-        }
+mockTelegramEnv({
+  onEvent(event, next) {
+    if (event.name === 'web_app_request_theme') {
+      // Use a dictionary type instead of strict ThemeParams
+      let tp: Record<string, `#${string}` | undefined> = {};
+
+      if (firstThemeSent) {
+        tp = themeParams.state();
+      } else {
+        firstThemeSent = true;
+        tp ||= retrieveLaunchParams().tgWebAppThemeParams;
+      }
+
+      return emitEvent('theme_changed', { theme_params: tp });
+    }
+
 
         if (event.name === 'web_app_request_safe_area') {
           return emitEvent('safe_area_changed', { left: 0, top: 0, right: 0, bottom: 0 });
